@@ -1,0 +1,752 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{TITLE}} - 深度分析报告</title>
+    <script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js"></script>
+    <style>
+        :root {
+            --primary: #2563eb;
+            --secondary: #64748b;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+            --bg: #f8fafc;
+            --card-bg: #ffffff;
+            --border: #e2e8f0;
+            --dark-bg: #1a1a2e;
+            --dark-card: rgba(255,255,255,0.05);
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: var(--dark-bg);
+            color: #e8e8e8;
+            line-height: 1.6;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 40px 20px;
+        }
+
+        h1 {
+            text-align: center;
+            font-size: 2.5rem;
+            background: linear-gradient(90deg, #ff6b6b, #ffd93d, #6bcb77, #4d96ff);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 10px;
+        }
+
+        .subtitle {
+            text-align: center;
+            color: #888;
+            margin-bottom: 40px;
+            font-size: 1.1rem;
+        }
+
+        .section {
+            background: var(--dark-card);
+            border-radius: 20px;
+            padding: 30px;
+            margin-bottom: 30px;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+
+        .section-title {
+            font-size: 1.5rem;
+            color: #ffd93d;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .section-title::before {
+            content: "";
+            width: 4px;
+            height: 24px;
+            background: linear-gradient(180deg, #ffd93d, #ff6b6b);
+            border-radius: 2px;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+        }
+
+        .card {
+            background: rgba(255,255,255,0.03);
+            border-radius: 12px;
+            padding: 20px;
+            border: 1px solid rgba(255,255,255,0.08);
+        }
+
+        .card-title {
+            font-size: 1.1rem;
+            color: #4d96ff;
+            margin-bottom: 15px;
+        }
+
+        .chart-container {
+            width: 100%;
+            height: 350px;
+        }
+
+        .formula-box {
+            background: linear-gradient(135deg, rgba(77,150,255,0.1), rgba(255,107,107,0.1));
+            border: 1px solid rgba(255,255,255,0.15);
+            border-radius: 12px;
+            padding: 25px;
+            text-align: center;
+            font-size: 1.2rem;
+            margin: 20px 0;
+        }
+
+        .formula {
+            font-family: "Consolas", "Monaco", monospace;
+            color: #ffd93d;
+            font-size: 1.4rem;
+            letter-spacing: 2px;
+        }
+
+        /* 多视角分析样式 */
+        .perspective-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 15px;
+        }
+        @media (max-width: 768px) {
+            .perspective-grid { grid-template-columns: 1fr; }
+        }
+        .perspective-card {
+            background: rgba(255,255,255,0.03);
+            border-radius: 10px;
+            padding: 15px;
+        }
+        .perspective-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 12px;
+            padding-bottom: 12px;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+        .perspective-icon { font-size: 1.8rem; }
+        .perspective-name {
+            font-weight: bold;
+            color: #4d96ff;
+            font-size: 1rem;
+        }
+        .perspective-core {
+            font-size: 0.85rem;
+            color: #ffd93d;
+            margin-top: 3px;
+        }
+        .perspective-list {
+            list-style: none;
+            font-size: 0.85rem;
+        }
+        .perspective-list li {
+            padding: 6px 0;
+            color: #ccc;
+            display: flex;
+            gap: 8px;
+        }
+        .perspective-list li::before {
+            content: "›";
+            color: #4d96ff;
+            font-weight: bold;
+        }
+        .perspective-list .highlight-item { color: #ffd93d; }
+        .perspective-list .highlight-item::before {
+            content: "★";
+            color: #ffd93d;
+        }
+
+        .confidence-meter {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            margin: 10px 0;
+        }
+        .confidence-bar {
+            flex: 1;
+            height: 8px;
+            background: rgba(255,255,255,0.1);
+            border-radius: 4px;
+            overflow: hidden;
+        }
+        .confidence-fill {
+            height: 100%;
+            border-radius: 4px;
+            transition: width 1s ease;
+        }
+        .confidence-label {
+            font-size: 0.9rem;
+            color: #888;
+            min-width: 60px;
+        }
+
+        .tag {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            margin: 3px;
+        }
+        .tag-red { background: rgba(255,107,107,0.2); color: #ff6b6b; }
+        .tag-yellow { background: rgba(255,217,61,0.2); color: #ffd93d; }
+        .tag-blue { background: rgba(77,150,255,0.2); color: #4d96ff; }
+        .tag-green { background: rgba(107,203,119,0.2); color: #6bcb77; }
+
+        .insight-list { list-style: none; }
+        .insight-list li {
+            padding: 12px 0;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+            display: flex;
+            gap: 15px;
+        }
+        .insight-list li:last-child { border-bottom: none; }
+        .insight-icon { font-size: 1.5rem; flex-shrink: 0; }
+
+        .system-flow {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            padding: 20px;
+        }
+        .flow-node {
+            background: rgba(77,150,255,0.1);
+            border-left: 3px solid #4d96ff;
+            padding: 15px 20px;
+            border-radius: 0 8px 8px 0;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        .flow-node.highlight { background: rgba(255,217,61,0.1); border-left-color: #ffd93d; }
+        .flow-node.warning { background: rgba(255,107,107,0.1); border-left-color: #ff6b6b; }
+        .flow-number {
+            width: 28px;
+            height: 28px;
+            background: #4d96ff;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 0.9rem;
+            flex-shrink: 0;
+        }
+        .flow-content { flex: 1; }
+        .flow-title { font-weight: bold; margin-bottom: 5px; }
+        .flow-desc { font-size: 0.9rem; color: #aaa; }
+
+        .footer {
+            text-align: center;
+            color: #666;
+            margin-top: 40px;
+            padding: 20px;
+        }
+        .timestamp { color: #4d96ff; }
+
+        /* 雷达图区域 */
+        .radar-section { margin-top: 20px; }
+        .perspective-radar { width: 100%; height: 400px; }
+
+        /* 生命周期图表 */
+        .lifecycle-container { width: 100%; height: 300px; }
+
+        /* Markdown内容样式 */
+        .content-section {
+            background: rgba(255,255,255,0.03);
+            border-radius: 12px;
+            padding: 25px;
+            margin-bottom: 20px;
+        }
+        .content-section h2 {
+            color: #4d96ff;
+            font-size: 1.3rem;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+        .content-section h3 {
+            color: #ffd93d;
+            font-size: 1.1rem;
+            margin: 15px 0 10px;
+        }
+        .content-section p {
+            color: #ccc;
+            margin-bottom: 10px;
+            line-height: 1.8;
+        }
+        .content-section table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 15px 0;
+        }
+        .content-section th, .content-section td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+        .content-section th {
+            color: #4d96ff;
+            font-weight: normal;
+        }
+        .content-section td { color: #ccc; }
+        .content-section code {
+            background: rgba(77,150,255,0.1);
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-family: "Consolas", "Monaco", monospace;
+            color: #ffd93d;
+        }
+        .content-section pre {
+            background: rgba(0,0,0,0.3);
+            padding: 15px;
+            border-radius: 8px;
+            overflow-x: auto;
+            margin: 15px 0;
+        }
+        .content-section pre code {
+            background: none;
+            padding: 0;
+        }
+        .content-section ul, .content-section ol {
+            margin: 10px 0 10px 20px;
+            color: #ccc;
+        }
+        .content-section li { margin-bottom: 5px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- 标题区域 -->
+        <h1 id="reportTitle">{{TITLE}}</h1>
+        <p class="subtitle" id="reportSubtitle">{{SUBTITLE}}</p>
+
+        <!-- 核心公式/洞察 -->
+        <div class="section" id="formulaSection" style="display:none;">
+            <div class="section-title">核心发现</div>
+            <div class="formula-box" id="formulaBox"></div>
+        </div>
+
+        <!-- 可视化图表区域 -->
+        <div class="grid" id="chartsGrid" style="display:none;">
+            <div class="card">
+                <div class="card-title" id="attributionTitle">多维归因分析</div>
+                <div id="attributionChart" class="chart-container"></div>
+            </div>
+            <div class="card">
+                <div class="card-title" id="cascadeTitle">传导效应分析</div>
+                <div id="cascadeChart" class="chart-container"></div>
+            </div>
+        </div>
+
+        <!-- 因果回路图 -->
+        <div class="section" id="systemSection" style="display:none;">
+            <div class="section-title">系统因果回路图</div>
+            <div id="systemChart" style="height: 450px;"></div>
+        </div>
+
+        <!-- 生命周期预测 -->
+        <div class="section" id="lifecycleSection" style="display:none;">
+            <div class="section-title">生命周期预测</div>
+            <div id="lifecycleChart" class="lifecycle-container"></div>
+        </div>
+
+        <!-- 置信度评估 -->
+        <div class="section" id="confidenceSection" style="display:none;">
+            <div class="section-title">置信度评估</div>
+            <div class="grid" id="confidenceGrid"></div>
+        </div>
+
+        <!-- 多视角雷达图 -->
+        <div class="section" id="radarSection" style="display:none;">
+            <div class="section-title">多视角探索深度</div>
+            <div id="perspectiveRadar" class="perspective-radar"></div>
+        </div>
+
+        <!-- 多视角详细分析 -->
+        <div class="section" id="perspectiveSection" style="display:none;">
+            <div class="section-title">多视角深度分析</div>
+            <div class="perspective-grid" id="perspectiveGrid"></div>
+        </div>
+
+        <!-- 传导流程 -->
+        <div class="section" id="flowSection" style="display:none;">
+            <div class="section-title">传导效应流程</div>
+            <div class="system-flow" id="flowContainer"></div>
+        </div>
+
+        <!-- 核心洞察 -->
+        <div class="section" id="insightSection" style="display:none;">
+            <div class="section-title">核心洞察</div>
+            <ul class="insight-list" id="insightList"></ul>
+        </div>
+
+        <!-- Markdown内容渲染区域 -->
+        <div id="markdownContent" style="display:none;"></div>
+
+        <!-- 标签 -->
+        <div class="section" id="tagSection" style="display:none;">
+            <div class="section-title">相关标签</div>
+            <div id="tagContainer"></div>
+        </div>
+
+        <div class="footer">
+            <p>分析时间：<span class="timestamp" id="analysisTime"></span></p>
+            <p>使用工具：深度思考工作流 (deep-thinking-workflow)</p>
+        </div>
+    </div>
+
+    <script>
+        // 全局图表实例
+        var charts = {};
+
+        // 数据注入点
+        const thinkingData = {{DATA_PLACEHOLDER}};
+
+        function initCharts() {
+            // 归因饼图
+            if (document.getElementById('attributionChart')) {
+                charts.attributionChart = echarts.init(document.getElementById('attributionChart'));
+            }
+            // 传导柱状图
+            if (document.getElementById('cascadeChart')) {
+                charts.cascadeChart = echarts.init(document.getElementById('cascadeChart'));
+            }
+            // 系统桑基图
+            if (document.getElementById('systemChart')) {
+                charts.systemChart = echarts.init(document.getElementById('systemChart'));
+            }
+            // 生命周期折线图
+            if (document.getElementById('lifecycleChart')) {
+                charts.lifecycleChart = echarts.init(document.getElementById('lifecycleChart'));
+            }
+            // 雷达图
+            if (document.getElementById('perspectiveRadar')) {
+                charts.perspectiveRadar = echarts.init(document.getElementById('perspectiveRadar'));
+            }
+        }
+
+        function renderAttributionChart(data) {
+            if (!charts.attributionChart || !data) return;
+            charts.attributionChart.setOption({
+                tooltip: { trigger: 'item', formatter: '{b}: {c}%' },
+                series: [{
+                    type: 'pie',
+                    radius: ['40%', '70%'],
+                    avoidLabelOverlap: true,
+                    itemStyle: { borderRadius: 10, borderColor: '#1a1a2e', borderWidth: 2 },
+                    label: { show: true, formatter: '{b}\n{c}%', color: '#e8e8e8' },
+                    data: data.map((item, i) => ({
+                        value: item.value,
+                        name: item.name,
+                        itemStyle: { color: ['#4d96ff', '#6bcb77', '#ffd93d', '#ff6b6b', '#a55eea', '#26de81'][i % 6] }
+                    }))
+                }]
+            });
+        }
+
+        function renderCascadeChart(data) {
+            if (!charts.cascadeChart || !data) return;
+            charts.cascadeChart.setOption({
+                tooltip: { trigger: 'axis', axisPointer: { type: 'shadow' } },
+                grid: { left: '3%', right: '4%', bottom: '3%', containLabel: true },
+                xAxis: {
+                    type: 'category',
+                    data: data.categories || ['一阶', '二阶', '三阶', '四阶'],
+                    axisLine: { lineStyle: { color: '#444' } },
+                    axisLabel: { color: '#aaa' }
+                },
+                yAxis: {
+                    type: 'value', name: '效应强度',
+                    axisLine: { lineStyle: { color: '#444' } },
+                    axisLabel: { color: '#aaa' },
+                    splitLine: { lineStyle: { color: '#333' } }
+                },
+                series: [
+                    { name: '正向', type: 'bar', stack: 'total', data: data.positive || [80, 60, 30, 20],
+                      itemStyle: { color: '#6bcb77' }, label: { show: true, position: 'inside', color: '#fff', formatter: '{c}%' } },
+                    { name: '中性', type: 'bar', stack: 'total', data: data.neutral || [20, 25, 35, 30],
+                      itemStyle: { color: '#ffd93d' }, label: { show: true, position: 'inside', color: '#333', formatter: '{c}%' } },
+                    { name: '负向', type: 'bar', stack: 'total', data: data.negative || [0, 15, 35, 50],
+                      itemStyle: { color: '#ff6b6b' }, label: { show: true, position: 'inside', color: '#fff', formatter: '{c}%' } }
+                ]
+            });
+        }
+
+        function renderSystemChart(data) {
+            if (!charts.systemChart || !data) return;
+            charts.systemChart.setOption({
+                tooltip: { trigger: 'item', formatter: function(p) { return p.name + ': ' + p.value; } },
+                series: [{
+                    type: 'sankey', layout: 'none', emphasis: { focus: 'adjacency' },
+                    nodeAlign: 'left',
+                    lineStyle: { color: 'gradient', curveness: 0.5 },
+                    data: data.nodes || [],
+                    links: data.links || []
+                }]
+            });
+        }
+
+        function renderLifecycleChart(data) {
+            if (!charts.lifecycleChart || !data) return;
+            charts.lifecycleChart.setOption({
+                tooltip: { trigger: 'axis' },
+                grid: { left: '3%', right: '4%', bottom: '3%', containLabel: true },
+                xAxis: {
+                    type: 'category', boundaryGap: false,
+                    data: data.days || ['Day 1', 'Day 3', 'Day 7', 'Day 14', 'Day 21', 'Day 30', 'Day 60'],
+                    axisLine: { lineStyle: { color: '#444' } },
+                    axisLabel: { color: '#aaa' }
+                },
+                yAxis: {
+                    type: 'value', name: '热度指数', max: 100,
+                    axisLine: { lineStyle: { color: '#444' } },
+                    axisLabel: { color: '#aaa' },
+                    splitLine: { lineStyle: { color: '#333' } }
+                },
+                series: [{
+                    name: '预测热度',
+                    type: 'line', smooth: true, symbol: 'circle', symbolSize: 10,
+                    data: data.values || [100, 95, 70, 45, 25, 10, 3],
+                    lineStyle: { color: '#ff6b6b', width: 3 },
+                    areaStyle: {
+                        color: {
+                            type: 'linear', x: 0, y: 0, x2: 0, y2: 1,
+                            colorStops: [
+                                { offset: 0, color: 'rgba(255,107,107,0.4)' },
+                                { offset: 1, color: 'rgba(255,107,107,0)' }
+                            ]
+                        }
+                    },
+                    label: { show: true, position: 'top', color: '#ff6b6b', formatter: '{c}' },
+                    markPoint: {
+                        data: [{ type: 'max', name: '峰值' }, { type: 'average', name: '均值' }],
+                        label: { color: '#ffd93d' }
+                    }
+                }]
+            });
+        }
+
+        function renderPerspectiveRadar(data) {
+            if (!charts.perspectiveRadar || !data) return;
+            charts.perspectiveRadar.setOption({
+                tooltip: {},
+                legend: { data: ['探索深度', '分析质量'], textStyle: { color: '#aaa' }, bottom: 10 },
+                radar: {
+                    indicator: data.indicators || [
+                        { name: '心理学', max: 100 }, { name: '传播学', max: 100 },
+                        { name: '社会学', max: 100 }, { name: '经济学', max: 100 },
+                        { name: '政治学', max: 100 }, { name: '产品设计', max: 100 }
+                    ],
+                    shape: 'polygon', splitNumber: 4,
+                    axisName: { color: '#4d96ff' },
+                    splitLine: { lineStyle: { color: 'rgba(255,255,255,0.1)' } },
+                    splitArea: { areaStyle: { color: ['rgba(77,150,255,0.05)', 'rgba(77,150,255,0.1)'] } },
+                    axisLine: { lineStyle: { color: 'rgba(255,255,255,0.2)' } }
+                },
+                series: [{
+                    type: 'radar',
+                    data: [
+                        { value: data.explorationDepth || [90, 95, 85, 75, 80, 85], name: '探索深度',
+                          lineStyle: { color: '#ff6b6b', width: 2 },
+                          areaStyle: { color: 'rgba(255,107,107,0.3)' }, itemStyle: { color: '#ff6b6b' } },
+                        { value: data.analysisQuality || [85, 88, 80, 78, 75, 82], name: '分析质量',
+                          lineStyle: { color: '#6bcb77', width: 2 },
+                          areaStyle: { color: 'rgba(107,203,119,0.3)' }, itemStyle: { color: '#6bcb77' } }
+                    ]
+                }]
+            });
+        }
+
+        function renderConfidence(data) {
+            if (!data) return;
+            const grid = document.getElementById('confidenceGrid');
+            grid.innerHTML = data.map(item => `
+                <div class="card">
+                    <div class="card-title">${item.label || item.name}</div>
+                    <p style="color: #aaa; margin-bottom: 10px;">${item.description || ''}</p>
+                    <div class="confidence-meter">
+                        <span class="confidence-label">${item.value}%</span>
+                        <div class="confidence-bar">
+                            <div class="confidence-fill" style="width: ${item.value}%; background: linear-gradient(90deg, ${item.color || '#4d96ff'}, ${item.colorEnd || '#6bcb77'});"></div>
+                        </div>
+                    </div>
+                    <p style="font-size: 0.85rem; color: #888;">${item.note || ''}</p>
+                </div>
+            `).join('');
+        }
+
+        function renderMarkdown(content) {
+            if (!content) return;
+            document.getElementById('markdownContent').innerHTML = content;
+        }
+
+        function renderInsights(data) {
+            if (!data || !data.length) return;
+            document.getElementById('insightList').innerHTML = data.map(item => `
+                <li>
+                    <span class="insight-icon">${item.icon || '📌'}</span>
+                    <div>
+                        <strong>${item.title || ''}</strong><br>
+                        <span style="color: #aaa;">${item.content || item.description || ''}</span>
+                    </div>
+                </li>
+            `).join('');
+        }
+
+        function renderPerspectives(data) {
+            if (!data || !data.length) return;
+            document.getElementById('perspectiveGrid').innerHTML = data.map(p => `
+                <div class="perspective-card">
+                    <div class="perspective-header">
+                        <span class="perspective-icon">${p.icon || '🔍'}</span>
+                        <div>
+                            <div class="perspective-name">${p.name}</div>
+                            <div class="perspective-core">核心：${p.core || ''}</div>
+                        </div>
+                    </div>
+                    <ul class="perspective-list">
+                        ${(p.points || []).map((pt, i) => `
+                            <li class="${pt.highlight ? 'highlight-item' : ''}">${pt.text || pt}</li>
+                        `).join('')}
+                    </ul>
+                </div>
+            `).join('');
+        }
+
+        function renderFlow(data) {
+            if (!data || !data.length) return;
+            document.getElementById('flowContainer').innerHTML = data.map((item, i) => `
+                <div class="flow-node ${item.type || ''}">
+                    <div class="flow-number">${i + 1}</div>
+                    <div class="flow-content">
+                        <div class="flow-title">${item.title}</div>
+                        <div class="flow-desc">${item.description || item.desc || ''}</div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function renderTags(data) {
+            if (!data || !data.length) return;
+            document.getElementById('tagContainer').innerHTML = data.map(t => `
+                <span class="tag ${t.type ? 'tag-' + t.type : 'tag-blue'}">${t.text || t}</span>
+            `).join('');
+        }
+
+        function renderFormula(data) {
+            if (!data) return;
+            document.getElementById('formulaBox').innerHTML = `
+                <div class="formula">${data.formula || data}</div>
+                <p style="margin-top: 15px; color: #888;">${data.description || ''}</p>
+            `;
+        }
+
+        function renderReport(data) {
+            // 基本信息
+            document.getElementById('reportTitle').textContent = data.title || '深度分析报告';
+            document.getElementById('reportSubtitle').textContent = data.subtitle || data.description || '';
+            document.getElementById('analysisTime').textContent = data.timestamp || new Date().toLocaleString('zh-CN');
+
+            // 显示/隐藏各区域并渲染
+            if (data.formula) {
+                document.getElementById('formulaSection').style.display = 'block';
+                renderFormula(data.formula);
+            }
+
+            if (data.attribution) {
+                document.getElementById('chartsGrid').style.display = 'grid';
+                renderAttributionChart(data.attribution);
+            }
+
+            if (data.cascade) {
+                document.getElementById('chartsGrid').style.display = 'grid';
+                renderCascadeChart(data.cascade);
+            }
+
+            if (data.system) {
+                document.getElementById('systemSection').style.display = 'block';
+                renderSystemChart(data.system);
+            }
+
+            if (data.lifecycle) {
+                document.getElementById('lifecycleSection').style.display = 'block';
+                renderLifecycleChart(data.lifecycle);
+            }
+
+            if (data.confidence) {
+                document.getElementById('confidenceSection').style.display = 'block';
+                renderConfidence(data.confidence);
+            }
+
+            if (data.perspectiveRadar) {
+                document.getElementById('radarSection').style.display = 'block';
+                renderPerspectiveRadar(data.perspectiveRadar);
+            }
+
+            if (data.perspectives) {
+                document.getElementById('perspectiveSection').style.display = 'block';
+                renderPerspectives(data.perspectives);
+            }
+
+            if (data.flow) {
+                document.getElementById('flowSection').style.display = 'block';
+                renderFlow(data.flow);
+            }
+
+            if (data.insights) {
+                document.getElementById('insightSection').style.display = 'block';
+                renderInsights(data.insights);
+            }
+
+            if (data.markdown) {
+                document.getElementById('markdownContent').style.display = 'block';
+                renderMarkdown(data.markdown);
+            }
+
+            if (data.tags) {
+                document.getElementById('tagSection').style.display = 'block';
+                renderTags(data.tags);
+            }
+
+            // 响应式
+            window.addEventListener('resize', function() {
+                Object.values(charts).forEach(chart => {
+                    if (chart && chart.resize) chart.resize();
+                });
+            });
+        }
+
+        // 初始化
+        document.addEventListener('DOMContentLoaded', function() {
+            initCharts();
+            if (thinkingData) {
+                renderReport(thinkingData);
+            }
+        });
+
+        // 如果DOM已加载
+        if (document.readyState === 'complete' || document.readyState === 'interactive') {
+            initCharts();
+            if (thinkingData) {
+                renderReport(thinkingData);
+            }
+        }
+    </script>
+</body>
+</html>

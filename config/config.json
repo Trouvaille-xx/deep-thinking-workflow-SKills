@@ -1,0 +1,285 @@
+{
+  "skill_meta": {
+    "name": "deep-thinking-workflow",
+    "version": "1.3.0",
+    "description": "深度思考工作流 - 渐进式思考方法论，支持用户介入和输出选择",
+    "author": "WorkBuddy"
+  },
+
+  "load_config": {
+    "default_level": 1,
+    "max_level": 3,
+    "auto_escalation": true,
+    "escalation_threshold": {
+      "question_complexity_score": 7,
+      "stakeholder_importance": "high",
+      "time_available_minutes": 10
+    }
+  },
+
+  "execution_modes": {
+    "step_by_step": {
+      "name": "渐进性执行",
+      "description": "分阶段执行，在关键节点设置断点供用户介入",
+      "breakpoints": {
+        "after_research": {
+          "enabled": true,
+          "name": "断点1_调研完成",
+          "description": "信息收集完成后暂停，用户可补充/调整"
+        },
+        "before_output": {
+          "enabled": true,
+          "name": "断点2_输出确认",
+          "description": "分析完成后输出前，用户选择输出格式"
+        }
+      }
+    },
+    "one_shot": {
+      "name": "一步执行",
+      "description": "一次性完成所有分析，最后统一询问输出"
+    }
+  },
+
+  "output_prompts": {
+    "ask_mode": "🔵 请选择执行模式：\n\n1️⃣ 渐进性执行（推荐）- 分阶段执行，可在关键节点介入\n2️⃣ 一步执行 - 一次性完成，稍后询问输出\n\n请选择 [1/2]：",
+    "breakpoint1": "═══════════════════════════════════════════\n🔴 断点1: 初步调研完成\n═══════════════════════════════════════════\n\n已收集的信息：\n{collected_info}\n\n▶ 请选择操作：\n\n1. 继续深度分析\n2. 补充信息（请描述）\n3. 调整分析方向（请描述）\n4. 重新定义问题\n\n请输入 [1/2/3/4]：",
+    "breakpoint2": "═══════════════════════════════════════════\n🔴 断点2: 分析完成，准备输出\n═══════════════════════════════════════════\n\n核心洞察：\n{core_insights}\n\n▶ 请选择输出格式：\n\n1. 生成 Markdown + HTML（推荐）\n2. 仅生成 Markdown\n3. 仅生成 HTML\n4. 先生成预览，让我再决定\n5. 暂不输出，稍后再说\n\n请输入 [1/2/3/4/5]："
+  },
+
+  "output_config": {
+    "auto_generate": true,
+    "enabled": true,
+    "load_order": 10,
+    "markdown_template": "default",
+    "html_template": "assets/thinking_output.html",
+    "file_naming": {
+      "prefix": "{topic}_analysis",
+      "timestamp": true,
+      "format": "YYYY-MM-DD"
+    },
+    "required_sections": {
+      "reflexivity": true,
+      "critical_thinking": true,
+      "systemic_thinking": true,
+      "first_principles": true,
+      "multi_perspective": true,
+      "confidence_assessment": true
+    },
+    "visualizations": {
+      "attribution_chart": {
+        "enabled": true,
+        "type": "pie",
+        "container_id": "attributionChart"
+      },
+      "cascade_effect_chart": {
+        "enabled": true,
+        "type": "bar_stacked",
+        "container_id": "cascadeChart"
+      },
+      "system_flow_chart": {
+        "enabled": true,
+        "type": "sankey",
+        "container_id": "systemChart"
+      },
+      "lifecycle_chart": {
+        "enabled": true,
+        "type": "line",
+        "container_id": "lifecycleChart"
+      },
+      "perspective_radar": {
+        "enabled": true,
+        "type": "radar",
+        "container_id": "perspectiveRadar"
+      },
+      "confidence_meters": {
+        "enabled": true,
+        "type": "progress",
+        "container_id": "confidenceSection"
+      }
+    }
+  },
+
+  "sub_skills_config": {
+    "reflexivity_awareness": {
+      "enabled": true,
+      "type": "meta",
+      "weight": 0.0,
+      "load_order": 0,
+      "prompt_templates": {
+        "self_check": "在进行判断前，进行反身性自我检查：\n{input}",
+        "bias_detection": "识别以下分析中可能的认知偏见：\n{input}",
+        "perspective_taking": "从相反立场分析：\n{input}"
+      },
+      "output_format": "json"
+    },
+    "critical_thinking": {
+      "enabled": true,
+      "weight": 0.3,
+      "load_order": 1,
+      "prompt_templates": {
+        "analysis": "分析以下论证的逻辑结构、隐含假设和潜在谬误：\n{input}",
+        "quick_check": "快速评估：这个观点可靠吗？\n{input}",
+        "value_clarify": "澄清以下问题中各方的价值诉求：\n{input}",
+        "fact_opinion": "剥离以下信息中的事实与观点：\n{input}",
+        "first_principles": "使用第一性原则+5Why追问分析：\n{input}"
+      },
+      "output_format": "json",
+      "confidence_threshold": 0.7,
+      "method_weights": {
+        "evidence_evaluation": 0.2,
+        "argument_structure": 0.2,
+        "fallacy_detection": 0.2,
+        "value_clarification": 0.15,
+        "fact_opinion_separation": 0.1,
+        "first_principles": 0.15
+      }
+    },
+    "systemic_thinking": {
+      "enabled": true,
+      "weight": 0.25,
+      "load_order": 2,
+      "prompt_templates": {
+        "system_scan": "对以下问题进行系统性分析：\n{input}\n\n识别：要素、连接、反馈回路、延迟、杠杆点",
+        "influence_map": "分析以下系统的行为模式：\n{input}",
+        "attribution_matrix": "使用多维归因矩阵分析结果原因：\n{input}",
+        "second_order": "分析以下决策的二阶/三阶传导效应：\n{input}",
+        "scale_stretch": "在多尺度上分析以下问题：\n{input}"
+      },
+      "output_format": "json",
+      "max_elements": 10,
+      "max_loops": 5,
+      "method_weights": {
+        "system_elements": 0.2,
+        "feedback_loops": 0.2,
+        "leverage_points": 0.15,
+        "attribution_matrix": 0.2,
+        "second_order_effects": 0.15,
+        "scale_stretching": 0.1
+      }
+    },
+    "creative_thinking": {
+      "enabled": true,
+      "weight": 0.2,
+      "load_order": 3,
+      "prompt_templates": {
+        "ideation": "针对以下问题，提出创新性解决方案：\n{input}\n\n使用SCAMPER、逆转、类比等技术",
+        "reframe": "用3种不同角度重新定义这个问题：\n{input}"
+      },
+      "output_format": "json",
+      "min_ideas": 5,
+      "novelty_threshold": 6
+    },
+    "structured_expression": {
+      "enabled": true,
+      "weight": 0.25,
+      "load_order": 4,
+      "prompt_templates": {
+        "write": "将以下内容结构化输出：\n{input}",
+        "convert": "将以下混沌思考整理为清晰表达：\n{input}"
+      },
+      "output_format": "json",
+      "default_framework": "pyramid",
+      "word_limit": 500
+    },
+    "perspectives": {
+      "enabled": true,
+      "weight": 0.2,
+      "load_order": 5,
+      "methodologies": {
+        "psychology": {
+          "enabled": true,
+          "file": "sub_skills/perspectives/perspective_psychology.md",
+          "trigger_keywords": ["心理", "动机", "认知", "情感", "共情", "用户心理"]
+        },
+        "communication": {
+          "enabled": true,
+          "file": "sub_skills/perspectives/perspective_communication.md",
+          "trigger_keywords": ["传播", "舆论", "信息", "符号", "媒体", "品牌"]
+        },
+        "product": {
+          "enabled": true,
+          "file": "sub_skills/perspectives/perspective_product.md",
+          "trigger_keywords": ["产品", "需求", "优先级", "迭代", "增长", "用户体验"]
+        },
+        "economics": {
+          "enabled": true,
+          "file": "sub_skills/perspectives/perspective_economics.md",
+          "trigger_keywords": ["经济", "成本", "激励", "供需", "博弈", "市场"]
+        },
+        "political": {
+          "enabled": true,
+          "file": "sub_skills/perspectives/perspective_political.md",
+          "trigger_keywords": ["政治", "权力", "利益", "联盟", "组织", "博弈"]
+        },
+        "design": {
+          "enabled": true,
+          "file": "sub_skills/perspectives/perspective_design.md",
+          "trigger_keywords": ["设计", "体验", "美感", "形态", "共情", "原型"]
+        }
+      }
+    }
+  },
+
+  "memory_config": {
+    "enabled": true,
+    "storage_path": ".workbuddy/memory/thinking/",
+    "auto_save": true,
+    "data_retention_days": 90,
+    "store": {
+      "insights": true,
+      "reasoning_path": true,
+      "confidence_scores": true,
+      "stakeholder_tags": true
+    }
+  },
+
+  "html_template": {
+    "enabled": true,
+    "template_file": "assets/thinking_output.html",
+    "styles": {
+      "primary_color": "#2563eb",
+      "secondary_color": "#64748b",
+      "background": "#f8fafc",
+      "card_background": "#ffffff"
+    },
+    "include_svg": true,
+    "show_confidence_bar": true,
+    "export_formats": ["html", "markdown", "json"]
+  },
+
+  "script_config": {
+    "python_engine": {
+      "enabled": true,
+      "script_path": "script/deep_think.py",
+      "timeout_seconds": 30,
+      "fallback_to_llm": true
+    },
+    "javascript_engine": {
+      "enabled": true,
+      "script_path": "script/think_engine.js",
+      "realtime_mode": true
+    }
+  },
+
+  "reference_links": [
+    {
+      "title": "Anthropic Claude Skill 规范",
+      "url": "https://docs.anthropic.com/claude/docs/skills"
+    },
+    {
+      "title": "金字塔原理",
+      "author": "Barbara Minto",
+      "type": "book"
+    },
+    {
+      "title": "系统之美",
+      "author": "Donella Meadows",
+      "type": "book"
+    },
+    {
+      "title": "Thinking, Fast and Slow",
+      "author": "Daniel Kahneman",
+      "type": "book"
+    }
+  ]
+}
